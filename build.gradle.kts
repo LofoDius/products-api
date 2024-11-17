@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "lofod"
-version = "0.0.1-SNAPSHOT"
+version = "1.0"
 
 java {
     toolchain {
@@ -23,12 +23,16 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-rest")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    //Thumbnail
+    implementation("net.coobird:thumbnailator:0.4.20")
 }
 
 kotlin {
