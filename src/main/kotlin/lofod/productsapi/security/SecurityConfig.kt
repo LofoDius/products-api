@@ -35,7 +35,7 @@ class SecurityConfig(
             }
             .addFilterBefore(sessionRequestFilter, UsernamePasswordAuthenticationFilter::class.java)
             .headers { headers ->
-                headers.addHeaderWriter { request, response ->
+                headers.addHeaderWriter { _, response ->
                     response.setHeader("Referrer-Policy", "no-referrer-when-downgrade")
                 }
             }
