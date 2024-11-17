@@ -4,6 +4,7 @@ import lofod.productsapi.model.request.CreateCardRequest
 import lofod.productsapi.model.request.CreateCategoryRequest
 import lofod.productsapi.model.request.UpdateCardRequest
 import lofod.productsapi.model.request.UpdateCategoryRequest
+import lofod.productsapi.model.response.CardResponse
 import lofod.productsapi.model.response.CategoryResponse
 import lofod.productsapi.service.CategoryService
 import org.bson.types.ObjectId
@@ -82,5 +83,10 @@ class CategoryController(private val service: CategoryService) {
     @DeleteMapping("/category/{categoryId}/card/{cardId}")
     fun deleteCard(@PathVariable categoryId: String, @PathVariable cardId: String): ResponseEntity<out Any> {
         return service.deleteCard(ObjectId(categoryId), ObjectId(cardId))
+    }
+
+    @GetMapping("/cards/search/{query}")
+    fun search(@PathVariable query: String): ResponseEntity<out List<CardResponse>> {
+        return service.searchCard(query)
     }
 }

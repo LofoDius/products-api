@@ -5,6 +5,7 @@ import lofod.productsapi.model.request.CreateCardRequest
 import lofod.productsapi.model.request.CreateCategoryRequest
 import lofod.productsapi.model.request.UpdateCardRequest
 import lofod.productsapi.model.request.UpdateCategoryRequest
+import lofod.productsapi.model.response.CardResponse
 import lofod.productsapi.model.response.CategoryResponse
 import lofod.productsapi.model.response.ImageIdResponse
 import lofod.productsapi.model.response.ImageResponse
@@ -198,6 +199,49 @@ class CategoryService(
         return ResponseEntity(HttpStatus.OK)
     }
 
+    fun searchCard(query: String): ResponseEntity<out List<CardResponse>> {
+        val tokens = query.trim().lowercase().split(" ").filter { it.isNotBlank() }
+        val categories = categoryRepository.findAll()
+        val resultCards: MutableList<Card> = mutableListOf()
+        var matchesInName = mutableMapOf<Int, MutableList<Card>>()
+        var matchesInDescription = mutableMapOf<Int, MutableList<Card>>()
+
+        val allCards = categories.filter { it.cards.size > 0 }
+            .mapNotNull { it.cards }
+            .flatten()
+
+        allCards.forEach { card ->
+            if (Regex(query).matches(card.name) || Regex(query.lowercase()).matches(card.name.lowercase()))
+                resultCards.add(card)
+            else matchesInName = checkTokens(tokens, card, card.name, matchesInName)
+        }
+
+        var matchCount = tokens.size
+        while (matchCount > 0) {
+            matchesInName[matchCount]?.let { resultCards.addAll(it) }
+            matchCount--
+        }
+
+        allCards.forEach { card ->
+            if (Regex(query).matches(card.description ?: "")
+                || Regex(query.lowercase()).matches(card.description?.lowercase() ?: "")
+            )
+                resultCards.add(card)
+            else if (card.description != null)
+                matchesInDescription = checkTokens(tokens, card, card.description, matchesInDescription)
+        }
+
+        matchCount = tokens.size
+        while (matchCount > 0) {
+            matchesInDescription[matchCount]?.let { cards ->
+                resultCards.addAll(cards.filter { !resultCards.contains(it) })
+            }
+            matchCount--
+        }
+
+        return ResponseEntity.ok(resultCards.map { cardMapper.toView(it) })
+    }
+
     private fun processCategory(category: Category): FullCategory {
         val fullCategory = FullCategory(
             categoryId = category.categoryId,
@@ -256,5 +300,27 @@ class CategoryService(
             deleteSubcategories(category.subcategories)
             categoryRepository.deleteCategoryByCategoryId(category.categoryId)
         }
+    }
+
+    private fun checkTokens(
+        tokens: List<String>,
+        card: Card,
+        value: String,
+        results: MutableMap<Int, MutableList<Card>>
+    ): MutableMap<Int, MutableList<Card>> {
+        var matchCount = 0
+        tokens.forEach { token ->
+            if (Regex(".*${token.lowercase()}.*").matches(value))
+                matchCount++
+        }
+
+        if (matchCount > 0) {
+            if (results[matchCount] == null)
+                results[matchCount] = mutableListOf(card)
+            else
+                results[matchCount]!!.add(card)
+        }
+
+        return results
     }
 }
