@@ -16,8 +16,15 @@ class SessionRequestFilter(
     private val sessionRepository: SessionRepository
 ) : OncePerRequestFilter() {
 
-    private val permittedEndpoints =
-        listOf("/session", "/category/tree", "/category/image/.*", "/category/.*/cards", "/card/image/.*", "/password")
+    private val permittedEndpoints = listOf(
+        "/session",
+        "/category/tree",
+        "/category/image/.*",
+        "/category/.*/cards",
+        "/card/image/.*",
+        "/password",
+        "/cards/search/.*"
+    )
 
     @Throws(ServletException::class, IOException::class)
     override fun doFilterInternal(
