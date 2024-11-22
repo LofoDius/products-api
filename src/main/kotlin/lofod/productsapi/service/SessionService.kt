@@ -4,6 +4,7 @@ import lofod.productsapi.model.Password
 import lofod.productsapi.model.Session
 import lofod.productsapi.repository.PasswordRepository
 import lofod.productsapi.repository.SessionRepository
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
@@ -22,7 +23,10 @@ class SessionService(
         val session = Session()
         sessionRepository.save(session)
 
-        return ResponseEntity(mapOf(Pair("Authorization", "Bearer ${session.id}")), HttpStatus.CREATED)
+        val httpHeaders = HttpHeaders()
+        httpHeaders.add("Authorization", session.id.toString())
+
+        return ResponseEntity(httpHeaders, HttpStatus.CREATED)
     }
 
     fun updatePassword(password: String): ResponseEntity<out Any> {
