@@ -9,6 +9,7 @@ class CategoryMapper {
     fun toView(category: FullCategory): CategoryResponse {
         return CategoryResponse(
             categoryId = category.categoryId.toString(),
+            parentId = category.parentId?.toString(),
             name = category.name,
             subcategoriesAmount = category.subcategories.size,
             cardsAmount = category.cards.size,
@@ -23,6 +24,7 @@ class CategoryMapper {
             categoryResponses.add(
                 CategoryResponse(
                     categoryId = category.categoryId.toString(),
+                    parentId = category.parentId?.toString(),
                     name = category.name,
                     subcategoriesAmount = category.subcategories.size,
                     cardsAmount = category.cards.size,
