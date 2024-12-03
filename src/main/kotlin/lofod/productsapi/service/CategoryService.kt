@@ -45,7 +45,7 @@ class CategoryService(
             subcategories = mutableListOf(),
             parentId = categoryRequest.parentId,
             cards = mutableListOf(),
-            imageId = null,
+            imageId = ObjectId(categoryRequest.imageId),
         )
 
         categoryRequest.parentId?.let { parentId ->
@@ -115,14 +115,14 @@ class CategoryService(
         )
         category.cards.add(newCard)
 
-        return ResponseEntity.ok(categoryRepository.save(category).cards.map { cardMapper.toView(it) })
+        return ResponseEntity.ok(categoryRepository.save(category).cards.map { cardMapper.toView(categoryId, it) })
     }
 
     fun getCardsOfCategory(categoryId: ObjectId): ResponseEntity<out Any> {
         val category = categoryRepository.getCategoryByCategoryId(categoryId)
             ?: return ResponseEntity("Не найдена категория с id=${categoryId}", HttpStatus.BAD_REQUEST)
 
-        return ResponseEntity.ok(category.cards.map { cardMapper.toView(it) })
+        return ResponseEntity.ok(category.cards.map { cardMapper.toView(categoryId, it) })
     }
 
     fun updateCard(categoryId: ObjectId, cardId: ObjectId, request: UpdateCardRequest): ResponseEntity<out Any> {
@@ -150,7 +150,7 @@ class CategoryService(
 
         categoryRepository.save(category)
 
-        return ResponseEntity.ok(category.cards.map { cardMapper.toView(it) })
+        return ResponseEntity.ok(category.cards.map { cardMapper.toView(categoryId, it) })
     }
 
     fun createImage(file: MultipartFile): ResponseEntity<out Any> {
@@ -177,7 +177,7 @@ class CategoryService(
             HttpStatus.BAD_REQUEST
         )
 
-        return ResponseEntity.ok(cardMapper.toView(card))
+        return ResponseEntity.ok(cardMapper.toView(categoryId, card))
     }
 
     fun deleteCard(categoryId: ObjectId, cardId: ObjectId): ResponseEntity<out Any> {
@@ -207,14 +207,15 @@ class CategoryService(
         var matchesInDescription = mutableMapOf<Int, MutableList<Card>>()
 
         val allCards = categories.filter { it.cards.size > 0 }
-            .mapNotNull { it.cards }
-            .flatten()
+            .mapNotNull { it.cards to it.categoryId }
 
-        allCards.forEach { card ->
-            if (Regex(query).matches(card.name) || Regex(query.lowercase()).matches(card.name.lowercase()))
-                resultCards.add(card)
-            else matchesInName = checkTokens(tokens, card, card.name, matchesInName)
-        }
+        allCards.map { it.first }
+            .flatten()
+            .forEach { card ->
+                if (Regex(query).matches(card.name) || Regex(query.lowercase()).matches(card.name.lowercase()))
+                    resultCards.add(card)
+                else matchesInName = checkTokens(tokens, card, card.name, matchesInName)
+            }
 
         var matchCount = tokens.size
         while (matchCount > 0) {
@@ -222,14 +223,16 @@ class CategoryService(
             matchCount--
         }
 
-        allCards.forEach { card ->
-            if (Regex(query).matches(card.description ?: "")
-                || Regex(query.lowercase()).matches(card.description?.lowercase() ?: "")
-            )
-                resultCards.add(card)
-            else if (card.description != null)
-                matchesInDescription = checkTokens(tokens, card, card.description, matchesInDescription)
-        }
+        allCards.map { it.first }
+            .flatten()
+            .forEach { card ->
+                if (Regex(query).matches(card.description ?: "")
+                    || Regex(query.lowercase()).matches(card.description?.lowercase() ?: "")
+                )
+                    resultCards.add(card)
+                else if (card.description != null)
+                    matchesInDescription = checkTokens(tokens, card, card.description, matchesInDescription)
+            }
 
         matchCount = tokens.size
         while (matchCount > 0) {
@@ -239,7 +242,12 @@ class CategoryService(
             matchCount--
         }
 
-        return ResponseEntity.ok(resultCards.map { cardMapper.toView(it) })
+        return ResponseEntity.ok(resultCards.map { resultCard ->
+            cardMapper.toView(
+                allCards.find { it.first.contains(resultCard) }!!.second,
+                resultCard
+            )
+        })
     }
 
     private fun processCategory(category: Category): FullCategory {

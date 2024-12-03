@@ -7,9 +7,9 @@ import jakarta.servlet.http.HttpServletResponse
 import lofod.productsapi.repository.SessionRepository
 import org.bson.types.ObjectId
 import org.springframework.stereotype.Component
+import org.springframework.web.HttpSessionRequiredException
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
-import javax.security.auth.login.CredentialException
 
 @Component
 class SessionRequestFilter(
@@ -41,9 +41,9 @@ class SessionRequestFilter(
         }
 
         val authorizationHeader = request.getHeader("Authorization")
-            ?: throw CredentialException("Не передан заголовок Authorization")
+            ?: throw HttpSessionRequiredException("Не передан заголовок Authorization")
         sessionRepository.getSessionById(ObjectId(authorizationHeader.replace("Bearer ", "")))
-            ?: throw CredentialException("Сессия c id=${authorizationHeader} не найдена")
+            ?: throw HttpSessionRequiredException("Сессия c id=${authorizationHeader} не найдена")
 
         filterChain.doFilter(request, response)
     }
