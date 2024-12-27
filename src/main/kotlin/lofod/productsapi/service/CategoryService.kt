@@ -45,7 +45,7 @@ class CategoryService(
             subcategories = mutableListOf(),
             parentId = categoryRequest.parentId,
             cards = mutableListOf(),
-            imageId = ObjectId(categoryRequest.imageId),
+            imageId = categoryRequest.imageId?.let { ObjectId(categoryRequest.imageId) },
         )
 
         categoryRequest.parentId?.let { parentId ->
