@@ -1,0 +1,45 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-products}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
+      MONGO_INITDB_DATABASE: productsDB
+    volumes:
+      - mongo_data:/data/db
+    # Uncomment to access Mongo from the host (e.g. Compass):
+    # ports:
+    #   - "27017:27017"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "-u",
+          "${MONGO_ROOT_USERNAME:-products}",
+          "-p",
+          "${MONGO_ROOT_PASSWORD:-changeme}",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-18080}:8080"
+    environment:
+      SPRING_MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-products}:${MONGO_ROOT_PASSWORD:-changeme}@mongo:27017/productsDB?authSource=admin
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo_data:

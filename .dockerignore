@@ -1,0 +1,13 @@
+.gradle
+build
+bin
+out
+.idea
+.vscode
+.kotlin
+.cursor
+.git
+.gitignore
+*.md
+spec
+**/src/test
