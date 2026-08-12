@@ -1,0 +1,41 @@
+---
+description: Перед commit/push обновить spec и почистить выполненные tasks
+alwaysApply: true
+---
+
+# Спека и tasks перед commit / push
+
+Спецификация системы хранится в Android-репозитории, не здесь:
+
+`D:/CursorProjects/ProductsAndroidApp/spec/`
+
+Зеркало API-задач: `D:/IdeaProjects/products-api/spec/tasks/`  
+Канон задач: `D:/CursorProjects/ProductsAndroidApp/spec/tasks/`
+
+Перед любым `git commit` или `git push` в remote для `products-api`:
+
+## Спецификация
+
+1. **Сверь diff** (эндпоинты, DTO, сервисы, security, модель Mongo) с файлами:
+   - `02-products-api.md`
+   - `03-api-contract.md`
+   - `04-data-model.md`
+   - при необходимости `00-overview.md`
+2. **Обнови спеку** в `ProductsAndroidApp/spec/`, если контракт или поведение API изменились.
+3. **Закоммить** правки спеки в репозитории Android-приложения (отдельным коммитом/PR при необходимости) **до** push API-изменений, либо в той же сессии перед push — так, чтобы remote не уехал вперёд документации.
+4. **Не пушь** API-изменения, пока спека не соответствует тому, что пушится.
+
+Если diff не затрагивает описанное поведение API — явно отметь, что обновление спеки не требуется, и только тогда пушь.
+
+## Tasks (`spec/tasks/`)
+
+Перед **любым commit** (в `products-api` и/или связанном Android-репо):
+
+1. **Удали выполненные задачи** — файлы с `status: done` в frontmatter:
+   - канон: `ProductsAndroidApp/spec/tasks/api/` (и связанные android/shared при необходимости)
+   - зеркало: `products-api/spec/tasks/`
+   - обнови соответствующие `README.md` в `tasks/`, убрав ссылки на удалённые задачи.
+2. **Если остались невыполненные задачи** (`status: pending` / `in_progress` или без `done`):
+   - **Не коммить.**
+   - Спроси у пользователя: **«Что с ними делать?»** (выполнить сейчас / оставить в working tree без коммита / удалить / другое).
+   - Действуй только после явного ответа пользователя.

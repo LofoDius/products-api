@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
@@ -15,7 +14,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val sessionRequestFilter: SessionRequestFilter
+    private val sessionRequestFilter: SessionRequestFilter,
 ) {
 
     @Bean
@@ -44,17 +43,12 @@ class SecurityConfig(
     }
 
     @Bean
-    fun bCryptPasswordEncoder(): BCryptPasswordEncoder {
-        return BCryptPasswordEncoder()
-    }
-
-    @Bean
     fun corsConfigurationSource(): CorsConfigurationSource = CorsConfiguration()
         .apply {
             allowedOrigins = listOf("*")
             allowedHeaders = listOf("*")
             allowedMethods = listOf("*")
-            exposedHeaders = listOf("Referrer-Policy")
+            exposedHeaders = listOf("Referrer-Policy", "Authorization")
         }.let { corsConfiguration ->
             UrlBasedCorsConfigurationSource().apply {
                 registerCorsConfiguration(
@@ -63,6 +57,4 @@ class SecurityConfig(
                 )
             }
         }
-
-
 }

@@ -7,33 +7,16 @@ import org.springframework.stereotype.Component
 @Component
 class CategoryMapper {
     fun toView(category: FullCategory): CategoryResponse {
+        val cards = category.cards
         return CategoryResponse(
             categoryId = category.categoryId.toString(),
             parentId = category.parentId?.toString(),
             name = category.name,
             subcategoriesAmount = category.subcategories.size,
-            cardsAmount = category.cards.size,
-            subcategories = processSubcategories(category.subcategories),
-            imageId = category.imageId?.toString()
+            cardsAmount = cards.size,
+            subcategories = category.subcategories.map { toView(it) },
+            imageId = category.imageId?.toString(),
+            role = category.role,
         )
-    }
-
-    private fun processSubcategories(categories: MutableList<FullCategory>): List<CategoryResponse> {
-        val categoryResponses = mutableListOf<CategoryResponse>()
-        categories.forEach { category ->
-            categoryResponses.add(
-                CategoryResponse(
-                    categoryId = category.categoryId.toString(),
-                    parentId = category.parentId?.toString(),
-                    name = category.name,
-                    subcategoriesAmount = category.subcategories.size,
-                    cardsAmount = category.cards.size,
-                    subcategories = processSubcategories(category.subcategories),
-                    imageId = category.imageId?.toString()
-                )
-            )
-        }
-
-        return categoryResponses
     }
 }

@@ -8,8 +8,10 @@ data class Category(
     val categoryId: ObjectId = ObjectId.get(),
 
     val name: String,
-    val subcategories: MutableList<LiteCategory> = mutableListOf(),
     val parentId: ObjectId?,
+    val ownerId: ObjectId,
+    /** Populated only on root categories (`parentId == null`); permissions flow down the tree. */
+    val memberIds: MutableList<ObjectId> = mutableListOf(),
     val cards: MutableList<Card> = mutableListOf(),
     val imageId: ObjectId?,
 )
