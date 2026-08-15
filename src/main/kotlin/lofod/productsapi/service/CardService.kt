@@ -3,7 +3,11 @@ package lofod.productsapi.service
 import lofod.productsapi.exception.BadRequestException
 import lofod.productsapi.exception.NotFoundException
 import lofod.productsapi.model.Card
+import lofod.productsapi.model.CustomFieldDefinition
+import lofod.productsapi.model.CustomFieldType
+import lofod.productsapi.model.CustomFieldValue
 import lofod.productsapi.model.request.CreateCardRequest
+import lofod.productsapi.model.request.CustomFieldValueDto
 import lofod.productsapi.model.request.UpdateCardRequest
 import lofod.productsapi.model.response.CardResponse
 import lofod.productsapi.repository.CategoryRepository
@@ -11,6 +15,8 @@ import lofod.productsapi.service.mapper.CardMapper
 import lofod.productsapi.util.ObjectIds
 import org.bson.types.ObjectId
 import org.springframework.stereotype.Service
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 @Service
 class CardService(
@@ -27,6 +33,11 @@ class CardService(
 
         categoryAccessService.requireAccess(userId, category)
         requireValidRating(request.rating)
+        val customFieldValues = mergeCustomFieldValues(
+            existing = emptyList(),
+            incoming = request.customFieldValues,
+            activeFields = category.customFields,
+        )
 
         category.cards.add(
             Card(
@@ -36,6 +47,7 @@ class CardService(
                 qualityLevel = request.qualityLevel,
                 rating = request.rating,
                 description = request.description,
+                customFieldValues = customFieldValues,
             )
         )
 
@@ -70,6 +82,12 @@ class CardService(
             imageService.deleteIfPresent(existing.imageId)
         }
 
+        val customFieldValues = mergeCustomFieldValues(
+            existing = existing.customFieldValues,
+            incoming = request.customFieldValues,
+            activeFields = category.customFields,
+        )
+
         category.cards[index] = Card(
             cardId = existing.cardId,
             name = request.name,
@@ -78,6 +96,7 @@ class CardService(
             qualityLevel = request.qualityLevel,
             rating = request.rating,
             description = request.description,
+            customFieldValues = customFieldValues,
         )
 
         categoryRepository.save(category)
@@ -149,6 +168,73 @@ class CardService(
         appendByMatchCount(matchesInDescription, tokens.size, result)
 
         return result.map { (categoryId, card) -> cardMapper.toView(categoryId, card) }
+    }
+
+    /**
+     * Validates incoming values against the active schema, updates those fieldIds,
+     * and keeps orphan values whose fieldId is not in the active schema.
+     */
+    internal fun mergeCustomFieldValues(
+        existing: List<CustomFieldValue>,
+        incoming: List<CustomFieldValueDto>,
+        activeFields: List<CustomFieldDefinition>,
+    ): List<CustomFieldValue> {
+        val activeById = activeFields.associateBy { it.fieldId }
+        val merged = existing.associateBy { it.fieldId }.toMutableMap()
+        val seenIncoming = mutableSetOf<ObjectId>()
+
+        incoming.forEachIndexed { index, dto ->
+            val fieldId = ObjectIds.parse(dto.fieldId, "customFieldValues[$index].fieldId")
+            val definition = activeById[fieldId]
+                ?: throw BadRequestException(
+                    "customFieldValues[$index].fieldId=${dto.fieldId} не входит в активную схему категории",
+                )
+            if (!seenIncoming.add(fieldId)) {
+                throw BadRequestException("Дублирующийся fieldId в customFieldValues: ${dto.fieldId}")
+            }
+            validateCustomFieldValue(definition.type, dto.value, index)
+            merged[fieldId] = CustomFieldValue(fieldId = fieldId, value = dto.value)
+        }
+
+        return merged.values.toList()
+    }
+
+    private fun validateCustomFieldValue(type: CustomFieldType, value: String?, index: Int) {
+        if (value == null) return
+        when (type) {
+            CustomFieldType.TEXT -> Unit
+            CustomFieldType.NUMBER -> {
+                val parsed = value.toDoubleOrNull()
+                if (parsed == null || parsed.isNaN() || parsed.isInfinite()) {
+                    throw BadRequestException(
+                        "customFieldValues[$index].value должен быть числом (NUMBER)",
+                    )
+                }
+            }
+            CustomFieldType.BOOLEAN -> {
+                if (value != "true" && value != "false") {
+                    throw BadRequestException(
+                        "customFieldValues[$index].value должен быть \"true\" или \"false\" (BOOLEAN)",
+                    )
+                }
+            }
+            CustomFieldType.DATE -> {
+                try {
+                    LocalDate.parse(value)
+                } catch (_: DateTimeParseException) {
+                    throw BadRequestException(
+                        "customFieldValues[$index].value должен быть датой yyyy-MM-dd (DATE)",
+                    )
+                }
+            }
+            CustomFieldType.COUNTER -> {
+                if (value.toIntOrNull() == null) {
+                    throw BadRequestException(
+                        "customFieldValues[$index].value должен быть целым числом (COUNTER)",
+                    )
+                }
+            }
+        }
     }
 
     private fun requireValidRating(rating: Int) {

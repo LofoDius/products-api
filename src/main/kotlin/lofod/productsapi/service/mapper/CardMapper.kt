@@ -1,13 +1,14 @@
 package lofod.productsapi.service.mapper
 
 import lofod.productsapi.model.Card
+import lofod.productsapi.model.request.CustomFieldValueDto
 import lofod.productsapi.model.response.CardResponse
 import org.bson.types.ObjectId
 import org.springframework.stereotype.Component
 
 @Component
 class CardMapper {
-    fun toView(categoryId: ObjectId, card: Card) : CardResponse {
+    fun toView(categoryId: ObjectId, card: Card): CardResponse {
         return CardResponse(
             cardId = card.cardId.toString(),
             categoryId = categoryId.toString(),
@@ -17,6 +18,12 @@ class CardMapper {
             qualityLevel = card.qualityLevel,
             rating = card.rating,
             description = card.description,
+            customFieldValues = card.customFieldValues.map {
+                CustomFieldValueDto(
+                    fieldId = it.fieldId.toHexString(),
+                    value = it.value,
+                )
+            },
         )
     }
 }

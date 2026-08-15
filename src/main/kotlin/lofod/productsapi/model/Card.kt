@@ -14,4 +14,6 @@ data class Card(
     /** Numeric rating 0..10 (half-star UI maps ½ star = 1). Missing in old docs → 0. */
     val rating: Int = 0,
     val description: String?,
+    /** Values keyed by fieldId; orphans for archived fields are retained. Missing in old docs → empty. */
+    val customFieldValues: List<CustomFieldValue> = emptyList(),
 )

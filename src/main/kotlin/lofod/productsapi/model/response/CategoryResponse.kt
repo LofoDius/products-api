@@ -1,6 +1,7 @@
 package lofod.productsapi.model.response
 
 import lofod.productsapi.model.CategoryRole
+import lofod.productsapi.model.request.CustomFieldDefinitionDto
 
 data class CategoryResponse(
     val name: String,
@@ -10,5 +11,7 @@ data class CategoryResponse(
     val cardsAmount: Int,
     val subcategories: List<CategoryResponse>,
     val imageId: String?,
+    val customFields: List<CustomFieldDefinitionDto> = emptyList(),
+    val customFieldArchive: List<CustomFieldDefinitionDto> = emptyList(),
     val role: CategoryRole,
 )

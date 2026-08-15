@@ -2,6 +2,7 @@ package lofod.productsapi.model.response
 
 import lofod.productsapi.model.PriceLevel
 import lofod.productsapi.model.QualityLevel
+import lofod.productsapi.model.request.CustomFieldValueDto
 
 data class CardResponse(
     val categoryId: String,
@@ -12,4 +13,5 @@ data class CardResponse(
     val qualityLevel: QualityLevel,
     val rating: Int = 0,
     val description: String?,
+    val customFieldValues: List<CustomFieldValueDto> = emptyList(),
 )

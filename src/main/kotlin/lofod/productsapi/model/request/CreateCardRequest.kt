@@ -9,5 +9,6 @@ data class CreateCardRequest(
     val priceLevel: PriceLevel,
     val qualityLevel: QualityLevel,
     val rating: Int = 0,
-    val description: String?
+    val description: String?,
+    val customFieldValues: List<CustomFieldValueDto> = emptyList(),
 )

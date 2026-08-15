@@ -9,5 +9,7 @@ data class FullCategory(
     val parentId: ObjectId?,
     val cards: MutableList<Card> = mutableListOf(),
     val imageId: ObjectId?,
+    val customFields: List<CustomFieldDefinition> = emptyList(),
+    val customFieldArchive: List<CustomFieldDefinition> = emptyList(),
     val role: CategoryRole,
 )
