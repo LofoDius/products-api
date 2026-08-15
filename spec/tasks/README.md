@@ -1,7 +1,8 @@
 # API tasks (mirror)
 
-Очередь пуста: выполненные задачи удалены перед коммитом.
+Очередь пуста.
 
-Канон: `D:\CursorProjects\ProductsAndroidApp\spec\tasks\api\`
+Канон полного индекса (включая Android/shared):  
+`D:\CursorProjects\ProductsAndroidApp\spec\tasks\`
 
 См. также [../README.md](../README.md).

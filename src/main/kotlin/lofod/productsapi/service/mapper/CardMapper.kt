@@ -15,6 +15,7 @@ class CardMapper {
             imageId = card.imageId?.toString(),
             priceLevel = card.priceLevel,
             qualityLevel = card.qualityLevel,
+            rating = card.rating,
             description = card.description,
         )
     }

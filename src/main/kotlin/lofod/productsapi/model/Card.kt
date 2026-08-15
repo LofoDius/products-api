@@ -11,5 +11,7 @@ data class Card(
     val imageId: ObjectId? = null,
     val priceLevel: PriceLevel,
     val qualityLevel: QualityLevel,
+    /** Numeric rating 0..10 (half-star UI maps ½ star = 1). Missing in old docs → 0. */
+    val rating: Int = 0,
     val description: String?,
 )

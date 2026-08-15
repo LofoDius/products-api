@@ -1,5 +1,6 @@
 package lofod.productsapi.service
 
+import lofod.productsapi.exception.BadRequestException
 import lofod.productsapi.exception.NotFoundException
 import lofod.productsapi.model.Card
 import lofod.productsapi.model.request.CreateCardRequest
@@ -25,6 +26,7 @@ class CardService(
             ?: throw NotFoundException("Не найдена категория с id=$categoryId")
 
         categoryAccessService.requireAccess(userId, category)
+        requireValidRating(request.rating)
 
         category.cards.add(
             Card(
@@ -32,6 +34,7 @@ class CardService(
                 imageId = ObjectIds.parseOptional(request.imageId, "imageId"),
                 priceLevel = request.priceLevel,
                 qualityLevel = request.qualityLevel,
+                rating = request.rating,
                 description = request.description,
             )
         )
@@ -54,6 +57,7 @@ class CardService(
             ?: throw NotFoundException("Не найдено категории с id=$categoryId")
 
         categoryAccessService.requireAccess(userId, category)
+        requireValidRating(request.rating)
 
         val index = category.cards.indexOfFirst { it.cardId == cardId }
         if (index < 0) {
@@ -72,6 +76,7 @@ class CardService(
             imageId = newImageId,
             priceLevel = request.priceLevel,
             qualityLevel = request.qualityLevel,
+            rating = request.rating,
             description = request.description,
         )
 
@@ -144,6 +149,12 @@ class CardService(
         appendByMatchCount(matchesInDescription, tokens.size, result)
 
         return result.map { (categoryId, card) -> cardMapper.toView(categoryId, card) }
+    }
+
+    private fun requireValidRating(rating: Int) {
+        if (rating !in 0..10) {
+            throw BadRequestException("rating должен быть в диапазоне 0..10")
+        }
     }
 
     private fun literalEquals(value: String, query: String): Boolean =

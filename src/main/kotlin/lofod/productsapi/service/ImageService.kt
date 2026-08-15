@@ -58,9 +58,12 @@ class ImageService(
         }
 
         val outputStream = ByteArrayOutputStream()
+        // Thumbnailator requires an explicit format when writing a BufferedImage to an OutputStream
+        // (no source filename). JPEG so outputQuality applies.
         Thumbnails.of(buffered)
             .width(width)
             .height(height)
+            .outputFormat("jpg")
             .outputQuality(quality)
             .toOutputStream(outputStream)
 

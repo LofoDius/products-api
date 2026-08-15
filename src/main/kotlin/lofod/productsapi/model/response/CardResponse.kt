@@ -10,5 +10,6 @@ data class CardResponse(
     val imageId: String? = null,
     val priceLevel: PriceLevel,
     val qualityLevel: QualityLevel,
+    val rating: Int = 0,
     val description: String?,
 )
