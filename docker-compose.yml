@@ -37,9 +37,15 @@ services:
       - "${API_PORT:-18080}:8080"
     environment:
       SPRING_MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-products}:${MONGO_ROOT_PASSWORD:-changeme}@mongo:27017/productsDB?authSource=admin
+      # App update hosting (GET /app/latest, GET /app/download, POST /app/releases).
+      APP_RELEASES_PATH: /app/data/app-releases
+      APP_RELEASES_DEPLOY_TOKEN: ${APP_RELEASES_DEPLOY_TOKEN:-}
+    volumes:
+      - app_releases_data:/app/data/app-releases
     depends_on:
       mongo:
         condition: service_healthy
 
 volumes:
   mongo_data:
+  app_releases_data:

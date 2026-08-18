@@ -25,6 +25,9 @@ class SessionRequestFilter(
     private val publicExactPaths = setOf(
         "/auth/register",
         "/auth/login",
+        "/app/latest",
+        "/app/download",
+        "/app/releases",
     )
 
     @Throws(ServletException::class, IOException::class)

@@ -41,3 +41,6 @@ out/
 
 ### Docker / local secrets ###
 .env
+
+### Local app-release storage ###
+/data/
