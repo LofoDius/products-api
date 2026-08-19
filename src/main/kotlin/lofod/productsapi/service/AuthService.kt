@@ -35,7 +35,7 @@ class AuthService(
 
     fun register(request: AuthRequest): UserResponse {
         if (request.username.isBlank() || request.password.isBlank()) {
-            throw BadRequestException("username и password обязательны")
+            throw BadRequestException("логин и пароль обязательны")
         }
         if (userRepository.findByUsername(request.username) != null) {
             throw ConflictException("Пользователь с таким username уже существует")
@@ -59,10 +59,10 @@ class AuthService(
 
     fun login(request: AuthRequest): LoginResult {
         val user = userRepository.findByUsername(request.username)
-            ?: throw UnauthorizedException("Неверный username или password")
+            ?: throw UnauthorizedException("Неверный логин или пароль")
 
         if (!passwordEncoder.matches(request.password, user.passwordHash)) {
-            throw UnauthorizedException("Неверный username или password")
+            throw UnauthorizedException("Неверный логин или пароль")
         }
 
         val session = Session(

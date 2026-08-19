@@ -79,5 +79,6 @@ class AuthApiIntegrationTest : AbstractApiIntegrationTest() {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"username":"carol","password":"wrong"}"""),
         ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("Неверный логин или пароль"))
     }
 }
