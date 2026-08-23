@@ -40,8 +40,10 @@ services:
       # App update hosting (GET /app/latest, GET /app/download, POST /app/releases).
       APP_RELEASES_PATH: /app/data/app-releases
       APP_RELEASES_DEPLOY_TOKEN: ${APP_RELEASES_DEPLOY_TOKEN:-}
+      SEARCH_INDEX_PATH: /app/data/search-index
     volumes:
       - app_releases_data:/app/data/app-releases
+      - search_index_data:/app/data/search-index
     depends_on:
       mongo:
         condition: service_healthy
@@ -49,3 +51,4 @@ services:
 volumes:
   mongo_data:
   app_releases_data:
+  search_index_data:

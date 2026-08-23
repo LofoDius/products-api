@@ -10,10 +10,12 @@ import lofod.productsapi.model.response.CategoryResponse
 import lofod.productsapi.model.response.ImageIdResponse
 import lofod.productsapi.model.response.ImageResponse
 import lofod.productsapi.model.response.MemberResponse
+import lofod.productsapi.model.response.SearchResponse
 import lofod.productsapi.service.CardService
 import lofod.productsapi.service.CategoryService
 import lofod.productsapi.service.ImageService
 import lofod.productsapi.service.MemberService
+import lofod.productsapi.service.search.SearchService
 import lofod.productsapi.util.ObjectIds
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
@@ -34,6 +37,7 @@ class CategoryController(
     private val cardService: CardService,
     private val imageService: ImageService,
     private val memberService: MemberService,
+    private val searchService: SearchService,
 ) {
 
     @GetMapping("/category/tree")
@@ -118,9 +122,12 @@ class CategoryController(
         return ResponseEntity.ok().build()
     }
 
-    @GetMapping("/cards/search/{query}")
-    fun search(@PathVariable query: String): List<CardResponse> =
-        cardService.searchCard(query)
+    @GetMapping("/search")
+    fun search(
+        @RequestParam("q") query: String,
+        @RequestParam(required = false) categoryId: String?,
+    ): SearchResponse =
+        searchService.search(query, categoryId)
 
     @PostMapping("/category/{id}/members")
     fun inviteMember(

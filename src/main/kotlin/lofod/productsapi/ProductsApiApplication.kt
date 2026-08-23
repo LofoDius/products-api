@@ -1,6 +1,7 @@
 package lofod.productsapi
 
 import lofod.productsapi.config.AppReleaseProperties
+import lofod.productsapi.config.SearchProperties
 import lofod.productsapi.security.SecurityConfig
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Import
 
 @SpringBootApplication
 @Import(value = [SecurityConfig::class])
-@EnableConfigurationProperties(AppReleaseProperties::class)
+@EnableConfigurationProperties(AppReleaseProperties::class, SearchProperties::class)
 class ProductsApiApplication
 
 fun main(args: Array<String>) {

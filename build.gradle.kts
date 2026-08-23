@@ -32,6 +32,11 @@ dependencies {
 
     //Thumbnail
     implementation("net.coobird:thumbnailator:0.4.20")
+
+    val luceneVersion = "9.12.1"
+    implementation("org.apache.lucene:lucene-core:$luceneVersion")
+    implementation("org.apache.lucene:lucene-analysis-common:$luceneVersion")
+    implementation("org.apache.lucene:lucene-queryparser:$luceneVersion")
 }
 
 kotlin {

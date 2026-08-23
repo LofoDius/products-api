@@ -6,11 +6,14 @@ import lofod.productsapi.repository.CategoryRepository
 import lofod.productsapi.repository.ImageRepository
 import lofod.productsapi.repository.SessionRepository
 import lofod.productsapi.repository.UserRepository
+import lofod.productsapi.service.search.SearchIndex
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
@@ -19,6 +22,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.nio.file.Files
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,12 +46,16 @@ abstract class AbstractApiIntegrationTest {
     @Autowired
     protected lateinit var imageRepository: ImageRepository
 
+    @Autowired
+    protected lateinit var searchIndex: SearchIndex
+
     @BeforeEach
     fun cleanDatabase() {
         categoryRepository.deleteAll()
         imageRepository.deleteAll()
         sessionRepository.deleteAll()
         userRepository.deleteAll()
+        searchIndex.rebuild(categoryRepository.findAll())
     }
 
     protected fun register(username: String, password: String = "secret"): ResultActions =
@@ -80,11 +88,21 @@ abstract class AbstractApiIntegrationTest {
         name: String,
         parentId: String? = null,
         imageId: String? = null,
+        customFields: List<Pair<String, String>> = emptyList(),
     ): JsonNode {
         val body = objectMapper.createObjectNode().apply {
             put("name", name)
             if (parentId == null) putNull("parentId") else put("parentId", parentId)
             if (imageId == null) putNull("imageId") else put("imageId", imageId)
+            if (customFields.isNotEmpty()) {
+                val fields = putArray("customFields")
+                customFields.forEach { (title, type) ->
+                    fields.addObject().apply {
+                        put("title", title)
+                        put("type", type)
+                    }
+                }
+            }
         }
         val result = mockMvc.perform(
             post("/category")
@@ -110,25 +128,47 @@ abstract class AbstractApiIntegrationTest {
         categoryId: String,
         name: String,
         description: String? = null,
+        customFieldValues: List<Pair<String, String?>> = emptyList(),
     ): JsonNode {
-        val body = """
-            {
-              "name": "$name",
-              "imageId": null,
-              "priceLevel": "MEDIUM_PRICE",
-              "qualityLevel": "MEDIUM_QUALITY",
-              "description": ${description?.let { "\"$it\"" } ?: "null"}
+        val body = objectMapper.createObjectNode().apply {
+            put("name", name)
+            putNull("imageId")
+            put("priceLevel", "MEDIUM_PRICE")
+            put("qualityLevel", "MEDIUM_QUALITY")
+            if (description == null) putNull("description") else put("description", description)
+            if (customFieldValues.isNotEmpty()) {
+                val values = putArray("customFieldValues")
+                customFieldValues.forEach { (fieldId, value) ->
+                    values.addObject().apply {
+                        put("fieldId", fieldId)
+                        if (value == null) putNull("value") else put("value", value)
+                    }
+                }
             }
-        """.trimIndent()
+        }
         val result = mockMvc.perform(
             post("/category/$categoryId/card")
                 .header("Authorization", authHeader(token))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(body),
+                .content(objectMapper.writeValueAsString(body)),
         )
             .andExpect(status().isOk)
             .andReturn()
         return objectMapper.readTree(result.response.contentAsString)
+    }
+
+    protected fun searchWithAuth(
+        token: String,
+        query: String,
+        categoryId: String? = null,
+    ): ResultActions {
+        val request = get("/search")
+            .param("q", query)
+            .header("Authorization", authHeader(token))
+        if (categoryId != null) {
+            request.param("categoryId", categoryId)
+        }
+        return mockMvc.perform(request)
     }
 
     protected fun putJson(token: String, path: String, json: String): ResultActions =
@@ -151,4 +191,13 @@ abstract class AbstractApiIntegrationTest {
 
     private fun authJson(username: String, password: String): String =
         """{"username":"$username","password":"$password"}"""
+
+    companion object {
+        @JvmStatic
+        @DynamicPropertySource
+        fun searchIndexPath(registry: DynamicPropertyRegistry) {
+            val dir = Files.createTempDirectory("products-api-search-")
+            registry.add("app.search.index-path") { dir.toAbsolutePath().toString() }
+        }
+    }
 }

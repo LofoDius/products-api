@@ -13,6 +13,7 @@ import lofod.productsapi.model.request.UpdateCategoryRequest
 import lofod.productsapi.model.response.CategoryResponse
 import lofod.productsapi.repository.CategoryRepository
 import lofod.productsapi.service.mapper.CategoryMapper
+import lofod.productsapi.service.search.SearchIndex
 import lofod.productsapi.util.ObjectIds
 import org.bson.types.ObjectId
 import org.springframework.stereotype.Service
@@ -23,6 +24,7 @@ class CategoryService(
     private val categoryMapper: CategoryMapper,
     private val imageService: ImageService,
     private val categoryAccessService: CategoryAccessService,
+    private val searchIndex: SearchIndex,
 ) {
 
     fun getAllCategories(): List<CategoryResponse> {
@@ -64,6 +66,7 @@ class CategoryService(
                 customFieldArchive = customFieldArchive,
             )
         )
+        searchIndex.indexCategory(category, categoryAccessService.resolveRoot(category).categoryId)
 
         val role = categoryAccessService.requireAccess(userId, category)
         return categoryMapper.toView(processCategory(category, role))
@@ -100,7 +103,13 @@ class CategoryService(
             customFieldArchive = customFieldArchive,
         )
 
+        val nameChanged = category.name != categoryRequest.name
         val saved = categoryRepository.save(updatedCategory)
+        val rootId = categoryAccessService.resolveRoot(saved).categoryId
+        searchIndex.indexCategory(saved, rootId)
+        if (nameChanged) {
+            saved.cards.forEach { card -> searchIndex.indexCard(card, saved, rootId) }
+        }
         val role = categoryAccessService.requireAccess(userId, saved)
         return categoryMapper.toView(processCategory(saved, role))
     }
@@ -275,7 +284,9 @@ class CategoryService(
         imageService.deleteIfPresent(category.imageId)
         cardsOf(category).forEach { card ->
             imageService.deleteIfPresent(card.imageId)
+            searchIndex.deleteCard(card.cardId)
         }
+        searchIndex.deleteCategory(category.categoryId)
         categoryRepository.deleteCategoryByCategoryId(category.categoryId)
     }
 

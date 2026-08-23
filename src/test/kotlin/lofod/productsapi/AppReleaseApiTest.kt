@@ -21,6 +21,7 @@ import kotlin.io.path.deleteIfExists
         "app.releases.path=build/test-app-releases-api",
         "app.releases.max-size-bytes=1024",
         "app.releases.deploy-token=test-deploy-token",
+        "app.search.index-path=build/test-search-index-releases",
     ],
 )
 class AppReleaseApiTest : AbstractApiIntegrationTest() {
