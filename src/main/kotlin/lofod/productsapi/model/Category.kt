@@ -2,6 +2,7 @@ package lofod.productsapi.model
 
 import org.bson.types.ObjectId
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Version
 
 data class Category(
     @Id
@@ -18,4 +19,7 @@ data class Category(
     val customFields: List<CustomFieldDefinition> = emptyList(),
     /** Removed fields kept for restore; card values for archived ids are never purged. */
     val customFieldArchive: List<CustomFieldDefinition> = emptyList(),
+    /** Shared catalog references; null indicates an unconverted legacy schema. */
+    val fieldIds: List<ObjectId>? = null,
+    @Version val version: Long? = null,
 )

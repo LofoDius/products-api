@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException::class)
+    fun handleConcurrentUpdate(ex: org.springframework.dao.OptimisticLockingFailureException): ResponseEntity<ErrorResponse> =
+        ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("CONFLICT", "Данные изменились. Обновите страницу и повторите действие"))
+
     @ExceptionHandler(NotFoundException::class)
     fun handleNotFound(ex: NotFoundException): ResponseEntity<ErrorResponse> =
         respond(HttpStatus.NOT_FOUND, ex)

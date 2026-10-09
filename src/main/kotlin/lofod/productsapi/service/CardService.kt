@@ -26,6 +26,7 @@ class CardService(
     private val imageService: ImageService,
     private val categoryAccessService: CategoryAccessService,
     private val searchIndex: SearchIndex,
+    private val workspace: CatalogWorkspaceService,
 ) {
 
     fun createCard(categoryId: ObjectId, request: CreateCardRequest): List<CardResponse> {
@@ -38,7 +39,7 @@ class CardService(
         val customFieldValues = mergeCustomFieldValues(
             existing = emptyList(),
             incoming = request.customFieldValues,
-            activeFields = category.customFields,
+            activeFields = workspace.active(category),
         )
 
         val card = Card(
@@ -88,7 +89,7 @@ class CardService(
         val customFieldValues = mergeCustomFieldValues(
             existing = existing.customFieldValues,
             incoming = request.customFieldValues,
-            activeFields = category.customFields,
+            activeFields = workspace.active(category),
         )
 
         val updated = Card(

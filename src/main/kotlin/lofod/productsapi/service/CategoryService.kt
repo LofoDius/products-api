@@ -25,6 +25,7 @@ class CategoryService(
     private val imageService: ImageService,
     private val categoryAccessService: CategoryAccessService,
     private val searchIndex: SearchIndex,
+    private val workspace: CatalogWorkspaceService,
 ) {
 
     fun getAllCategories(): List<CategoryResponse> {
@@ -48,11 +49,12 @@ class CategoryService(
             ownerId = userId
         }
 
-        val (customFields, customFieldArchive) = reconcileCustomFields(
-            incoming = categoryRequest.customFields,
-            currentActive = emptyList(),
-            currentArchive = emptyList(),
-        )
+        val parent = categoryRequest.parentId?.let { categoryRepository.getCategoryByCategoryId(it) }
+        val (customFields, customFieldArchive) = if (parent != null) {
+            val inherited = workspace.active(parent)
+            val requested = categoryRequest.customFields ?: inherited.map { categoryMapper.toDto(it) }
+            workspace.schema(parent, requested, inherited)
+        } else reconcileCustomFields(categoryRequest.customFields.orEmpty(), emptyList(), emptyList())
 
         val category = categoryRepository.save(
             Category(
@@ -64,6 +66,7 @@ class CategoryService(
                 imageId = ObjectIds.parseOptional(categoryRequest.imageId, "imageId"),
                 customFields = customFields,
                 customFieldArchive = customFieldArchive,
+                fieldIds = customFields.map { it.fieldId },
             )
         )
         searchIndex.indexCategory(category, categoryAccessService.resolveRoot(category).categoryId)
@@ -82,11 +85,7 @@ class CategoryService(
         val newParentId = resolveParentIdForUpdate(category, categoryRequest.parentId)
         val newImageId = resolveImageIdForUpdate(category, categoryRequest.imageId)
         val (customFields, customFieldArchive) = if (categoryRequest.customFields != null) {
-            reconcileCustomFields(
-                incoming = categoryRequest.customFields,
-                currentActive = category.customFields,
-                currentArchive = category.customFieldArchive,
-            )
+            workspace.schema(category, categoryRequest.customFields)
         } else {
             category.customFields to category.customFieldArchive
         }
@@ -101,6 +100,8 @@ class CategoryService(
             imageId = newImageId,
             customFields = customFields,
             customFieldArchive = customFieldArchive,
+            fieldIds = customFields.map { it.fieldId },
+            version = category.version,
         )
 
         val nameChanged = category.name != categoryRequest.name
@@ -259,9 +260,10 @@ class CategoryService(
         return parsed
     }
 
-    private fun processCategory(category: Category, role: CategoryRole): FullCategory {
+    private fun processCategory(category: Category, role: CategoryRole,
+        catalog: List<CatalogField> = workspace.definitions(category)): FullCategory {
         val children = categoryRepository.findByParentId(category.categoryId)
-            .map { processCategory(it, role) }
+            .map { processCategory(it, role, catalog) }
             .toMutableList()
 
         return FullCategory(
@@ -270,8 +272,10 @@ class CategoryService(
             parentId = category.parentId,
             imageId = category.imageId,
             cards = cardsOf(category),
-            customFields = category.customFields,
-            customFieldArchive = category.customFieldArchive,
+            customFields = workspace.active(category, catalog),
+            customFieldArchive = category.customFieldArchive.map { old -> catalog.firstOrNull {
+                it.fieldId == old.fieldId.toHexString()
+            }?.let { CustomFieldDefinition(old.fieldId, it.title, it.type) } ?: old },
             subcategories = children,
             role = role,
         )

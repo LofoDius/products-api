@@ -1,0 +1,26 @@
+# Use together with docker-compose.yml; keeps the existing database volume.
+services:
+  mongo:
+    entrypoint: ["bash", "/opt/products/mongo-replica-entrypoint.sh"]
+    volumes:
+      - ./docker/mongo-replica-entrypoint.sh:/opt/products/mongo-replica-entrypoint.sh:ro
+  mongo-init:
+    image: mongo:7
+    restart: "no"
+    environment:
+      MONGO_USER: ${MONGO_ROOT_USERNAME:-products}
+      MONGO_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
+    volumes:
+      - ./docker/init-replica.js:/opt/products/init-replica.js:ro
+    entrypoint: ["bash", "-c"]
+    command:
+      - exec mongosh --host mongo --username "$$MONGO_USER" --password "$$MONGO_PASSWORD" --authenticationDatabase admin /opt/products/init-replica.js
+    depends_on:
+      mongo:
+        condition: service_healthy
+  api:
+    environment:
+      SPRING_MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:-products}:${MONGO_ROOT_PASSWORD:-changeme}@mongo:27017/productsDB?authSource=admin&replicaSet=rs0
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully

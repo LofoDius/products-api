@@ -6,5 +6,6 @@ data class CreateCategoryRequest(
     val parentId: ObjectId?,
     val name: String,
     val imageId: String?,
-    val customFields: List<CustomFieldDefinitionDto> = emptyList(),
+    /** Omitted means inherit the parent's connected fields; explicit [] means none. */
+    val customFields: List<CustomFieldDefinitionDto>? = null,
 )
